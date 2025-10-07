@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WarZone — Slot Asset Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background:#111; color:#eee; }
+    h1 { color: #ffcc00; }
+    label { display:block; margin-top:10px; }
+    input { padding:6px; width:100%; margin-bottom:10px; }
+    button { margin-top:10px; cursor:pointer; }
+    .asset { border:1px solid #444; padding:10px; margin:10px 0; background:#222; }
+    img { max-width:100%; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:20px; }
+  </style>
+</head>
+<body>
+  <h1>WarZone — Slot Asset Generator</h1>
+
+  <label>Nazwa gry</label>
+  <input id="gameName" value="WarZone" />
+
+  <label>Prompt dla tła</label>
+  <input id="bgPrompt" value="Wojskowy hangar z pojazdami" />
+
+  <label>Prompt dla ramki</label>
+  <input id="framePrompt" value="Ramka militarna" />
+
+  <h2>Symbole</h2>
+  <div id="symbolsInputs"></div>
+
+  <button id="generate">Generuj assety</button>
+
+  <div id="output"></div>
+
+<script>
+const symbols = ['A','K','Q','J','10','WILD','SCATTER'];
+const symbolsInputsDiv = document.getElementById('symbolsInputs');
+const prompts = {};
+
+symbols.forEach(sym => {
+  const div = document.createElement('div');
+  div.innerHTML = `<label>Prompt dla symbolu ${sym}</label><input id="sym_${sym}" value="Symbol ${sym} w stylu wojskowym" />`;
+  symbolsInputsDiv.appendChild(div);
+  prompts[sym] = `Symbol ${sym} w stylu wojskowym`;
+});
+
+function drawTextAsset(width, height, text, bgColor='#333', fontColor='#fff', fontSize=24){
+  const c = document.createElement('canvas');
+  c.width = width; c.height = height;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = bgColor; ctx.fillRect(0,0,width,height);
+  ctx.fillStyle = fontColor;
+  ctx.font = `bold ${fontSize}px Arial`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, width/2, height/2);
+  return c.toDataURL('image/png');
+}
+
+function downloadDataUrl(dataUrl, filename){
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
+document.getElementById('generate').onclick = ()=>{
+  const name = document.getElementById('gameName').value;
+  const bgPrompt = document.getElementById('bgPrompt').value;
+  const framePrompt = document.getElementById('framePrompt').value;
+  symbols.forEach(sym => { prompts[sym] = document.getElementById('sym_'+sym).value; });
+
+  const out = document.getElementById('output');
+  out.innerHTML = '';
+
+  const assets = [];
+  assets.push(['Tło', drawTextAsset(800,450,bgPrompt,'#1b1f18','#4f5a3c',28), name+'_bg.png']);
+  assets.push(['Ramka', drawTextAsset(800,450,framePrompt,'#2b2b2b','#fff',24), name+'_frame.png']);
+  symbols.forEach(sym => {
+    assets.push([`Symbol ${sym}`, drawTextAsset(200,200,prompts[sym],'#3b3b3b','#fff',20), `${name}_symbol_${sym}.png`]);
+  });
+
+  assets.forEach(([title,src,fn])=>{
+    const div = document.createElement('div');
+    div.className = 'asset';
+    div.innerHTML = `<h3>${title}</h3><img src="${src}" /><br/><a href="${src}" download="${fn}"><button>Pobierz</button></a>`;
+    out.appendChild(div);
+  });
+};
+</script>
+</body>
+</html>
