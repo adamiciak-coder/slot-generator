@@ -2,100 +2,46 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WarZone — Slot Asset Generator</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #1b1f18; color: #fff; padding: 20px; }
-    h1 { font-size: 2em; margin-bottom: 20px; }
-    .input-block { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; }
-    input { width: 100%; padding: 8px; border-radius: 4px; border: none; }
-    button { background: #2e7d32; color: #fff; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-    button:disabled { background: #555; }
-    .grid { display: grid; gap: 20px; }
-    .symbols { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); }
-    .preview { border: 1px solid #444; padding: 10px; border-radius: 6px; background: #2b2b2b; text-align: center; }
-    .preview img { max-width: 100%; height: auto; margin-bottom: 10px; }
+    body { background:#111; color:#eee; font-family:Arial,sans-serif; padding:20px; }
+    input, button { padding:8px; margin:5px 0; }
+    .preview img { max-width:100%; margin:10px 0; border:2px solid #555; }
   </style>
 </head>
 <body>
   <h1>WarZone — Slot Asset Generator</h1>
 
-  <div class="input-block">
-    <label>Nazwa gry</label>
-    <input id="gameName" value="WarZone">
-  </div>
+  <label>Prompt:</label><br>
+  <input id="prompt" type="text" value="Symbol A w stylu wojskowym z granatem" style="width:100%"><br>
 
-  <div class="input-block">
-    <label>Prompt dla tła</label>
-    <input id="bgPrompt" value="Wojskowy hangar z pojazdami i żołnierzami">
-  </div>
-  <div class="input-block">
-    <label>Prompt dla ramki</label>
-    <input id="framePrompt" value="Ramka w stylu militarnym">
-  </div>
+  <button onclick="generate()">Generuj obraz</button>
 
-  <h3>Symbole</h3>
-  <div id="symbolsInputs"></div>
-
-  <button id="generateBtn">Generuj assety</button>
-
-  <h2>Wygenerowane assety</h2>
-  <div class="grid" id="previews"></div>
+  <div class="preview" id="preview"></div>
 
   <script>
-    const proxyUrl = "https://slot-generator.onrender.com"; // <- zmień na swój backend proxy
+    const proxyUrl = "https://slot-generator.onrender.com/generate"; // Twój backend na Render
 
-    const defaultSymbols = {
-      'A': 'Symbol A w stylu wojskowym z złotym granatem',
-      'K': 'Symbol K w stylu wojskowym z karabinem',
-      'Q': 'Symbol Q w stylu wojskowym z hełmem',
-      'J': 'Symbol J w stylu wojskowym z bagnetem',
-      '10': 'Symbol 10 w stylu wojskowym z amunicją',
-      'WILD': 'Symbol WILD w stylu wojskowym z emblemą',
-      'SCATTER': 'Symbol SCATTER w stylu wojskowym z wybuchem'
-    };
+    async function generate(){
+      const prompt = document.getElementById('prompt').value;
+      document.getElementById('preview').innerHTML = '<p>Generowanie...</p>';
 
-    const symbolsInputs = document.getElementById('symbolsInputs');
-    for(const [key,val] of Object.entries(defaultSymbols)){
-      const div = document.createElement('div');
-      div.className = 'input-block';
-      div.innerHTML = `<label>Prompt dla symbolu ${key}</label><input id="sym_${key}" value="${val}">`;
-      symbolsInputs.appendChild(div);
-    }
-
-    document.getElementById('generateBtn').addEventListener('click', async ()=>{
-      const gameName = document.getElementById('gameName').value;
-      const bgPrompt = document.getElementById('bgPrompt').value;
-      const framePrompt = document.getElementById('framePrompt').value;
-
-      const previews = document.getElementById('previews');
-      previews.innerHTML = '';
-
-      async function generateAndShow(prompt, filename, size){
+      try {
         const res = await fetch(proxyUrl, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ prompt, size })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: prompt, size: '512x512' })
         });
         const data = await res.json();
-        if(data.data && data.data[0] && data.data[0].url){
-          const url = data.data[0].url;
-          const div = document.createElement('div');
-          div.className = 'preview';
-          div.innerHTML = `<img src="${url}" alt="${filename}"><br><a href="${url}" download="${filename}">Pobierz ${filename}</a>`;
-          previews.appendChild(div);
+        if(data.url){
+          document.getElementById('preview').innerHTML = `<img src="${data.url}" alt="Obraz AI">`;
+        } else {
+          document.getElementById('preview').innerHTML = '<p>Błąd generowania</p>';
         }
+      } catch (e){
+        document.getElementById('preview').innerHTML = '<p>Błąd połączenia z backendem</p>';
       }
-
-      await generateAndShow(bgPrompt, gameName+"_background.png", "1024x1024");
-      await generateAndShow(framePrompt, gameName+"_frame.png", "1024x1024");
-
-      for(const key of Object.keys(defaultSymbols)){
-        const val = document.getElementById('sym_'+key).value;
-        await generateAndShow(val, gameName+"_"+key+".png", "512x512");
-      }
-    });
+    }
   </script>
 </body>
 </html>
