@@ -21,7 +21,7 @@
   <div class="preview" id="preview"></div>
 
   <script>
-    const proxyUrl = "https://slot-generator.onrender.com/generate"; // Twój backend na Render
+    const proxyUrl = "https://slot-generator.onrender.com/generate"; // backend proxy na Render
 
     async function generate(){
       const prompt = document.getElementById('prompt').value;
@@ -31,32 +31,28 @@
         const res = await fetch(proxyUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: prompt, size: '1024x1024' }) // ✅ zmieniono rozmiar
+          body: JSON.stringify({ prompt: prompt, size: '1024x1024' }) // ✅ poprawny rozmiar
         });
 
-        const text = await res.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (err) {
-          document.getElementById('preview').innerHTML = `<p>Niepoprawny JSON z backendu:</p><pre>${text}</pre>`;
-          return;
-        }
-
+        const data = await res.json();
         console.log("Odpowiedź backendu:", data);
 
-        // Obsłuż odpowiedź w formacie OpenAI (data.data[0].url)
         let imageUrl = null;
+
+        // Obsługa różnych formatów odpowiedzi
         if(data.url){
           imageUrl = data.url;
         } else if(data.data && data.data[0] && data.data[0].url){
           imageUrl = data.data[0].url;
+        } else if(data.error){
+          document.getElementById('preview').innerHTML = `<p>Błąd z backendu:</p><pre>${JSON.stringify(data.error,null,2)}</pre>`;
+          return;
         }
 
         if(imageUrl){
           document.getElementById('preview').innerHTML = `<img src="${imageUrl}" alt="Obraz AI">`;
         } else {
-          document.getElementById('preview').innerHTML = `<p>Brak adresu obrazka w odpowiedzi. Oto pełna odpowiedź backendu:</p><pre>${JSON.stringify(data,null,2)}</pre>`;
+          document.getElementById('preview').innerHTML = `<p>Nie znaleziono adresu obrazka w odpowiedzi:</p><pre>${JSON.stringify(data,null,2)}</pre>`;
         }
       } catch (e){
         document.getElementById('preview').innerHTML = `<p>Błąd połączenia z backendem:</p><pre>${e}</pre>`;
