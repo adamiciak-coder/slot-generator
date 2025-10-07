@@ -7,6 +7,7 @@
     body { background:#111; color:#eee; font-family:Arial,sans-serif; padding:20px; }
     input, button { padding:8px; margin:5px 0; }
     .preview img { max-width:100%; margin:10px 0; border:2px solid #555; }
+    pre { background:#222; padding:10px; border-radius:6px; }
   </style>
 </head>
 <body>
@@ -32,7 +33,17 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: prompt, size: '512x512' })
         });
-        const data = await res.json();
+
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          document.getElementById('preview').innerHTML = `<p>Niepoprawny JSON z backendu:</p><pre>${text}</pre>`;
+          return;
+        }
+
+        console.log("Odpowiedź backendu:", data);
 
         // Obsłuż odpowiedź w formacie OpenAI (data.data[0].url)
         let imageUrl = null;
@@ -45,10 +56,10 @@
         if(imageUrl){
           document.getElementById('preview').innerHTML = `<img src="${imageUrl}" alt="Obraz AI">`;
         } else {
-          document.getElementById('preview').innerHTML = `<pre>${JSON.stringify(data,null,2)}</pre>`;
+          document.getElementById('preview').innerHTML = `<p>Brak adresu obrazka w odpowiedzi. Oto pełna odpowiedź backendu:</p><pre>${JSON.stringify(data,null,2)}</pre>`;
         }
       } catch (e){
-        document.getElementById('preview').innerHTML = '<p>Błąd połączenia z backendem</p>';
+        document.getElementById('preview').innerHTML = `<p>Błąd połączenia z backendem:</p><pre>${e}</pre>`;
       }
     }
   </script>
