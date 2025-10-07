@@ -33,10 +33,19 @@
           body: JSON.stringify({ prompt: prompt, size: '512x512' })
         });
         const data = await res.json();
+
+        // Obsłuż odpowiedź w formacie OpenAI (data.data[0].url)
+        let imageUrl = null;
         if(data.url){
-          document.getElementById('preview').innerHTML = `<img src="${data.url}" alt="Obraz AI">`;
+          imageUrl = data.url;
+        } else if(data.data && data.data[0] && data.data[0].url){
+          imageUrl = data.data[0].url;
+        }
+
+        if(imageUrl){
+          document.getElementById('preview').innerHTML = `<img src="${imageUrl}" alt="Obraz AI">`;
         } else {
-          document.getElementById('preview').innerHTML = '<p>Błąd generowania</p>';
+          document.getElementById('preview').innerHTML = `<pre>${JSON.stringify(data,null,2)}</pre>`;
         }
       } catch (e){
         document.getElementById('preview').innerHTML = '<p>Błąd połączenia z backendem</p>';
